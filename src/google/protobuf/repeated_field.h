@@ -250,7 +250,7 @@ class RepeatedField {
   // the struct. We can not use sizeof(Arena*) as well because there might be
   // a "gap" after the field arena and before the field elements (e.g., when
   // Element is double and pointer is 32bit).
-  static const size_t kRepHeaderSize;
+  //static const size_t kRepHeaderSize;
   // Contains arena ptr and the elements array. We also keep the invariant that
   // if rep_ is NULL, then arena is NULL.
   Rep* rep_;
@@ -291,8 +291,15 @@ class RepeatedField {
 };
 
 template<typename Element>
-const size_t RepeatedField<Element>::kRepHeaderSize =
-    reinterpret_cast<size_t>(&reinterpret_cast<Rep*>(16)->elements[0]) - 16;
+size_t kRepHeaderSize() {
+    struct Rep {
+        Arena* arena;
+        Element elements[1];
+    };
+    static const size_t kRepHeaderSize =
+        reinterpret_cast<size_t>(&reinterpret_cast<Rep*>(16)->elements[0]) - 16;
+    return kRepHeaderSize;
+}
 
 namespace internal {
 template <typename It> class RepeatedPtrIterator;
@@ -986,8 +993,8 @@ inline RepeatedField<Element>::RepeatedField(Arena* arena)
  // In case arena is NULL, then we do not create rep_, as code has an invariant
  // `rep_ == NULL then arena == NULL`.
  if (arena != NULL) {
-  rep_ = reinterpret_cast<Rep*>(
-      ::google::protobuf::Arena::CreateArray<char>(arena, kRepHeaderSize));
+     rep_ = reinterpret_cast<Rep*>(
+         ::google::protobuf::Arena::CreateArray<char>(arena, kRepHeaderSize<Element>()));
   rep_->arena = arena;
  }
 }
@@ -1249,7 +1256,7 @@ RepeatedField<Element>::cend() const {
 template <typename Element>
 inline int RepeatedField<Element>::SpaceUsedExcludingSelf() const {
   return rep_ ?
-      (total_size_ * sizeof(Element) + kRepHeaderSize) : 0;
+      (total_size_ * sizeof(Element) + kRepHeaderSize<Element>()) : 0;
 }
 
 // Avoid inlining of Reserve(): new, copy, and delete[] lead to a significant
@@ -1262,16 +1269,16 @@ void RepeatedField<Element>::Reserve(int new_size) {
   new_size = std::max(google::protobuf::internal::kMinRepeatedFieldAllocationSize,
                       std::max(total_size_ * 2, new_size));
   GOOGLE_CHECK_LE(static_cast<size_t>(new_size),
-           (std::numeric_limits<size_t>::max() - kRepHeaderSize) /
+           (std::numeric_limits<size_t>::max() - kRepHeaderSize<Element>()) /
            sizeof(Element))
       << "Requested size is too large to fit into size_t.";
   if (arena == NULL) {
     rep_ = reinterpret_cast<Rep*>(
-        new char[kRepHeaderSize + sizeof(Element) * new_size]);
+        new char[kRepHeaderSize<Element>() + sizeof(Element) * new_size]);
   } else {
     rep_ = reinterpret_cast<Rep*>(
             ::google::protobuf::Arena::CreateArray<char>(arena,
-                kRepHeaderSize + sizeof(Element) * new_size));
+                kRepHeaderSize<Element>() + sizeof(Element) * new_size));
   }
   rep_->arena = arena;
   int old_total_size = total_size_;

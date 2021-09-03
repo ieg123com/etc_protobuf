@@ -175,14 +175,15 @@ void FileGenerator::GeneratePBHeader(io::Printer* printer,
   string filename_identifier =
       FilenameIdentifier(file_->name() + (options_.proto_h ? ".pb.h" : ""));
   GenerateTopHeaderGuard(printer, filename_identifier);
-
   if (options_.proto_h) {
     printer->Print("#include \"$basename$.proto.h\"  // IWYU pragma: export\n",
                    "basename", StripProto(file_->name()));
   } else {
     GenerateLibraryIncludes(printer);
   }
+
   GenerateDependencyIncludes(printer);
+
   GenerateMetadataPragma(printer, info_path);
 
   printer->Print(
@@ -194,16 +195,17 @@ void FileGenerator::GeneratePBHeader(io::Printer* printer,
   GenerateNamespaceOpeners(printer);
 
   if (!options_.proto_h) {
-    GenerateGlobalStateFunctionDeclarations(printer);
-    GenerateMessageForwardDeclarations(printer);
+	GenerateGlobalStateFunctionDeclarations(printer);
+	GenerateMessageForwardDeclarations(printer);
 
     printer->Print("\n");
 
-    GenerateEnumDefinitions(printer);
+	GenerateEnumDefinitions(printer);
 
     printer->Print(kThickSeparator);
     printer->Print("\n");
 
+    // class Message Éú³É
     GenerateMessageDefinitions(printer);
 
     printer->Print("\n");
@@ -757,7 +759,8 @@ void FileGenerator::GenerateTopHeaderGuard(io::Printer* printer,
       "#ifndef PROTOBUF_$filename_identifier$__INCLUDED\n"
       "#define PROTOBUF_$filename_identifier$__INCLUDED\n"
       "\n"
-      "#include <string>\n",
+      "#include <string>\n"
+      "#include <type/type_factory.h>\n",
       "filename", file_->name(), "filename_identifier", filename_identifier);
   printer->Print("\n");
 }

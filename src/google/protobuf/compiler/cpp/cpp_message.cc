@@ -855,7 +855,6 @@ GenerateDependentBaseClassDefinition(io::Printer* printer) {
 
   // Generate dependent accessor methods for all fields.
   GenerateDependentFieldAccessorDeclarations(printer);
-
   printer->Outdent();
   printer->Print("};\n");
 }
@@ -872,7 +871,6 @@ GenerateClassDefinition(io::Printer* printer) {
     printer->Print(kThinSeparator);
     printer->Print("\n");
   }
-
   if (use_dependent_base_) {
     GenerateDependentBaseClassDefinition(printer);
       printer->Print("\n");
@@ -1069,6 +1067,7 @@ GenerateClassDefinition(io::Printer* printer) {
       "bool IsInitialized() const;\n"
       "\n"
       "int ByteSize() const;\n"
+      "virtual Type GetType()const override {return typeof($classname$);}\n"
       "bool MergePartialFromCodedStream(\n"
       "    ::google::protobuf::io::CodedInputStream* input);\n"
       "void SerializeWithCachedSizes(\n"
