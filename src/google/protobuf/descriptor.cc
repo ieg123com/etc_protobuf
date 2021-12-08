@@ -4070,6 +4070,8 @@ void DescriptorBuilder::BuildMessage(const DescriptorProto& proto,
   result->full_name_       = full_name;
   result->file_            = file_;
   result->containing_type_ = parent;
+  result->final_comment_   = tables_->AllocateString(proto.final_comment());
+  result->response_type_    = tables_->AllocateString(proto.response_type());
   result->is_placeholder_  = false;
   result->is_unqualified_placeholder_ = false;
 

@@ -181,6 +181,10 @@ class LIBPROTOBUF_EXPORT Descriptor {
   // comes after the last '.', use name().
   const string& full_name() const;
 
+
+  const string& final_comment()const;
+
+  const string& response_type()const;
   // Index of this descriptor within the file or containing type's message
   // type array.
   int index() const;
@@ -387,6 +391,8 @@ class LIBPROTOBUF_EXPORT Descriptor {
   const FileDescriptor* file_;
   const Descriptor* containing_type_;
   const MessageOptions* options_;
+  const string* final_comment_;
+  const string* response_type_;
 
   // True if this is a placeholder for an unknown type.
   bool is_placeholder_;
@@ -1165,6 +1171,12 @@ class LIBPROTOBUF_EXPORT FileDescriptor {
   // e.g. "google/protobuf/descriptor.proto"
   const string& name() const;
 
+  const string file_name() const {
+      size_t pos = name_->rfind('.');
+      if (pos == string::npos)return *name_;
+      return name_->substr(0,  pos);
+  }
+
   // The package, e.g. "google.protobuf.compiler".
   const string& package() const;
 
@@ -1652,6 +1664,8 @@ class LIBPROTOBUF_EXPORT DescriptorPool {
 
 PROTOBUF_DEFINE_STRING_ACCESSOR(Descriptor, name)
 PROTOBUF_DEFINE_STRING_ACCESSOR(Descriptor, full_name)
+PROTOBUF_DEFINE_STRING_ACCESSOR(Descriptor, final_comment)
+PROTOBUF_DEFINE_STRING_ACCESSOR(Descriptor, response_type)
 PROTOBUF_DEFINE_ACCESSOR(Descriptor, file, const FileDescriptor*)
 PROTOBUF_DEFINE_ACCESSOR(Descriptor, containing_type, const Descriptor*)
 

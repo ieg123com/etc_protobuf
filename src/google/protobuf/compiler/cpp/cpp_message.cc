@@ -379,6 +379,7 @@ MessageGenerator::MessageGenerator(const Descriptor* descriptor,
                                    const Options& options)
     : descriptor_(descriptor),
       classname_(ClassName(descriptor, false)),
+      final_comment_(descriptor->final_comment()),
       options_(options),
       field_generators_(descriptor, options),
       nested_generators_(new google::protobuf::scoped_ptr<
@@ -879,6 +880,7 @@ GenerateClassDefinition(io::Printer* printer) {
   map<string, string> vars;
   vars["classname"] = classname_;
   vars["full_name"] = descriptor_->full_name();
+  vars["filename_nosuffix"] = descriptor_->file()->file_name();
   vars["field_count"] = SimpleItoa(descriptor_->field_count());
   vars["oneof_decl_count"] = SimpleItoa(descriptor_->oneof_decl_count());
   if (options_.dllexport_decl.empty()) {
@@ -892,10 +894,12 @@ GenerateClassDefinition(io::Printer* printer) {
   } else {
     vars["superclass"] = SuperClassName(descriptor_, options_);
   }
-  printer->Print(vars,
-    "class $dllexport$$classname$ : public $superclass$ "
-    "/* @@protoc_insertion_point(class_definition:$full_name$) */ "
-    "{\n");
+
+    printer->Print(vars,
+	    "class $dllexport$$classname$ : public $superclass$ "
+	    "/* @@protoc_insertion_point(class_definition:$full_name$) */ "
+	    "{\n");
+
   printer->Annotate("classname", descriptor_);
   if (use_dependent_base_) {
     printer->Print(vars, "  friend class $superclass$;\n");
@@ -1060,6 +1064,72 @@ GenerateClassDefinition(io::Printer* printer) {
         "void CheckTypeAndMergeFrom(const ::google::protobuf::MessageLite& from);\n");
     }
 
+    {
+        // TODO： 自定义基类
+		// 类型
+		enum class SuperClassType :uint8_t
+		{
+			None,
+			IMessage,
+			IRequest,
+			IResponse,
+			IActorMessage,
+			IActorRequest,
+			IActorResponse,
+			IActorLocationMessage,
+			IActorLocationRequest,
+			IActorLocationResponse,
+		};
+
+		auto GetSuperClassType = [](const std::string& text)->SuperClassType {
+			if (text == "IMessage") return SuperClassType::IMessage;
+			else if (text == "IRequest")return SuperClassType::IRequest;
+			else if (text == "IResponse")return SuperClassType::IResponse;
+			else if (text == "IActorMessage")return SuperClassType::IActorMessage;
+			else if (text == "IActorRequest")return SuperClassType::IActorRequest;
+			else if (text == "IActorResponse")return SuperClassType::IActorResponse;
+			else if (text == "IActorLocationMessage")return SuperClassType::IActorLocationMessage;
+			else if (text == "IActorLocationRequest")return SuperClassType::IActorLocationRequest;
+			else if (text == "IActorLocationResponse")return SuperClassType::IActorLocationResponse;
+			else return SuperClassType::None;
+
+		};
+
+
+		switch (GetSuperClassType(final_comment_))
+		{
+		
+		case SuperClassType::IResponse:
+		case SuperClassType::IActorResponse:
+		case SuperClassType::IActorLocationResponse:
+			printer->Print(vars,
+				"virtual int32_t GetError()const override {return error();}\n"
+				"virtual void SetError(const int32_t val)override { set_error(val);}\n"
+				"virtual const ::std::string& GetMessage()const override {return message();}\n"
+				"virtual void SetMessage(const ::std::string& val)override { set_message(val);}\n");
+		case SuperClassType::IRequest:
+		case SuperClassType::IActorRequest:
+		case SuperClassType::IActorLocationMessage:
+		case SuperClassType::IActorLocationRequest:
+            printer->Print(vars,
+                "virtual int32_t GetRpcId()const override {return rpcid();}\n"
+                "virtual void SetRpcId(const int32_t val)override { set_rpcid(val);}\n");
+
+		case SuperClassType::IMessage:
+		case SuperClassType::IActorMessage:
+			printer->Print(vars,
+				"virtual uint16_t GetOpcode()const override {return $filename_nosuffix$Opcode::$classname$;}\n"
+                "virtual Type GetType()const override {return typeof($classname$);}\n");
+			printer->Print(vars,
+				"virtual EMessageType GetMessageType()const override {return EMessageType::$superclass$;}\n");
+            break;
+		}
+    }
+   
+			
+
+
+
     printer->Print(vars,
       "void CopyFrom(const $classname$& from);\n"
       "void MergeFrom(const $classname$& from);\n"
@@ -1067,7 +1137,6 @@ GenerateClassDefinition(io::Printer* printer) {
       "bool IsInitialized() const;\n"
       "\n"
       "int ByteSize() const;\n"
-      "virtual Type GetType()const override {return typeof($classname$);}\n"
       "bool MergePartialFromCodedStream(\n"
       "    ::google::protobuf::io::CodedInputStream* input);\n"
       "void SerializeWithCachedSizes(\n"

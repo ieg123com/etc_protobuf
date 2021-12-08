@@ -189,7 +189,9 @@ void FileGenerator::GeneratePBHeader(io::Printer* printer,
   printer->Print(
     "// @@protoc_insertion_point(includes)\n");
 
-
+  // 取消Win自带的宏
+  printer->Print(
+	  "#undef GetMessage\n");
 
   // Open namespace.
   GenerateNamespaceOpeners(printer);
@@ -258,6 +260,7 @@ void FileGenerator::GenerateSource(io::Printer* printer) {
     "\n"
     "#include <algorithm>\n"    // for swap()
     "\n"
+    "#include \"module/message/interface/MessageSystemAttribute.h\"\n"
     "#include <google/protobuf/stubs/common.h>\n"
     "#include <google/protobuf/stubs/port.h>\n"
     "#include <google/protobuf/stubs/once.h>\n"
@@ -298,6 +301,31 @@ void FileGenerator::GenerateSource(io::Printer* printer) {
     "// @@protoc_insertion_point(includes)\n");
 
   GenerateNamespaceOpeners(printer);
+
+  {
+      // TODO: 生成反射代码
+	  printer->Print("// Reflection all message types.\n");
+	  for (int i = 0; i < file_->message_type_count(); i++) {
+          if (!file_->message_type(i)->final_comment().empty())
+          {
+			  printer->Print(
+				  "REF($classname$,ProtoMessage);\n",
+				  "classname", file_->message_type(i)->name());
+          }
+	  }
+      
+	  printer->Print("// Reflection self the response message type.\n");
+	  for (int i = 0; i < file_->message_type_count(); i++) {
+		  if (!file_->message_type(i)->response_type().empty())
+		  {
+			  printer->Print(
+				  "REF($classname$,ProtoResponseMessage(typeof($responsename$)));\n",
+				  "classname", file_->message_type(i)->name(),
+                  "responsename", file_->message_type(i)->response_type());
+          }
+      }
+  }
+
 
   if (HasDescriptorMethods(file_, options_)) {
     printer->Print(
@@ -760,8 +788,12 @@ void FileGenerator::GenerateTopHeaderGuard(io::Printer* printer,
       "#define PROTOBUF_$filename_identifier$__INCLUDED\n"
       "\n"
       "#include <string>\n"
-      "#include <type/type_factory.h>\n",
-      "filename", file_->name(), "filename_identifier", filename_identifier);
+      "#include \"type/type_factory.h\"\n"
+      "#include \"opcode/$filename_nosuffix$Opcode.h\"\n"
+      "#include \"module/message/MessageDefines.h\"\n"
+      "#include \"etc/etc_config.h\"\n",
+      "filename", file_->name(), "filename_identifier", filename_identifier,
+      "filename_nosuffix", file_->file_name());
   printer->Print("\n");
 }
 

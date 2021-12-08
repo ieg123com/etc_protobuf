@@ -173,9 +173,16 @@ string DependentBaseClassTemplateName(const Descriptor* descriptor) {
 }
 
 string SuperClassName(const Descriptor* descriptor, const Options& options) {
-  return HasDescriptorMethods(descriptor->file(), options)
-             ? "::google::protobuf::Message"
-             : "::google::protobuf::MessageLite";
+    if (descriptor->final_comment().empty())
+    {
+		return HasDescriptorMethods(descriptor->file(), options)
+			? "::google::protobuf::Message"
+			: "::google::protobuf::MessageLite";
+    }
+    else {
+        return descriptor->final_comment();
+    }
+
 }
 
 string DependentBaseDownCast() {

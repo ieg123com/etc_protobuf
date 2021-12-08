@@ -187,6 +187,7 @@ class MessageGenerator {
 
   const Descriptor* descriptor_;
   string classname_;
+  string final_comment_;    // Î²²¿×¢ÊÍ
   Options options_;
   FieldGeneratorMap field_generators_;
   vector< vector<string> > runs_of_fields_;  // that might be trivially cleared

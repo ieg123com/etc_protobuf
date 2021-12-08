@@ -143,6 +143,9 @@ class LIBPROTOBUF_EXPORT Tokenizer {
   // previous call to Next().
   const Token& previous();
 
+  // Return a comment.This comment will be relesad later.
+  const string take_comment();
+
   // Advance to the next token.  Returns false if the end of the input is
   // reached.
   bool Next();
@@ -217,6 +220,8 @@ class LIBPROTOBUF_EXPORT Tokenizer {
   static bool ParseInteger(const string& text, uint64 max_value,
                            uint64* output);
 
+  // Analyze comments and take out standard registration.
+  static void ParseComment(const string& text, string* output);
   // Options ---------------------------------------------------------
 
   // Set true to allow floats to be suffixed with the letter 'f'.  Tokens
@@ -252,12 +257,26 @@ class LIBPROTOBUF_EXPORT Tokenizer {
   // External helper: validate an identifier.
   static bool IsIdentifier(const string& text);
 
+  const char* GetBuffer()const { return buffer_; }
+
+  std::string LastBuffer()const {
+      std::string result;
+      result.append(buffer_ + buffer_pos_, buffer_size_ - buffer_pos_);
+      result.append("\0");
+      return result;
+  }
+
+  void Debug(const char* remark = "Empty")const {
+      printf("[%s]Last Buffer:[%s]\n", remark,LastBuffer().c_str());
+  }
   // -----------------------------------------------------------------
  private:
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(Tokenizer);
 
   Token current_;           // Returned by current().
   Token previous_;          // Returned by previous().
+
+  string comment_;          // Returned by take_comment().
 
   ZeroCopyInputStream* input_;
   ErrorCollector* error_collector_;
@@ -397,6 +416,12 @@ inline const Tokenizer::Token& Tokenizer::current() {
 
 inline const Tokenizer::Token& Tokenizer::previous() {
   return previous_;
+}
+
+inline const string Tokenizer::take_comment()
+{
+    string result = std::move(comment_);
+    return result;
 }
 
 inline void Tokenizer::ParseString(const string& text, string* output) {

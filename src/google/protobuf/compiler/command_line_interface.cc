@@ -777,7 +777,7 @@ int CommandLineInterface::Run(int argc, const char* const argv[]) {
     importer.ClearUnusedImportTrackFiles();
     if (parsed_file == NULL) return 1;
     parsed_files.push_back(parsed_file);
-
+    cout << parsed_file->name();
     // Enforce --disallow_services.
     if (disallow_services_ && parsed_file->service_count() > 0) {
       cerr << parsed_file->name() << ": This file contains services, but "

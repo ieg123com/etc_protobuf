@@ -173,10 +173,11 @@ bool Parser::Consume(const char* text) {
   }
 }
 
-bool Parser::ConsumeIdentifier(string* output, const char* error) {
+bool Parser::ConsumeIdentifier(string* output, const char* error, string* final_comment) {
   if (LookingAtType(io::Tokenizer::TYPE_IDENTIFIER)) {
     *output = input_->current().text;
     input_->Next();
+    if (final_comment != NULL)*final_comment = input_->take_comment();
     return true;
   } else {
     AddError(error);
@@ -559,7 +560,6 @@ bool Parser::Parse(io::Tokenizer* input, FileDescriptorProto* file) {
         // This statement failed to parse.  Skip it, but keep looping to parse
         // other statements.
         SkipStatement();
-
         if (LookingAt("}")) {
           AddError("Unmatched \"}\".");
           input_->NextWithComments(NULL, &upcoming_detached_comments_,
@@ -650,13 +650,16 @@ bool Parser::ParseMessageDefinition(
     DescriptorProto* message,
     const LocationRecorder& message_location,
     const FileDescriptorProto* containing_file) {
-  DO(Consume("message"));
+    *message->mutable_head_comment() = upcoming_doc_comments_;
+	DO(Consume("message"));
   {
-    LocationRecorder location(message_location,
+		LocationRecorder location(message_location,
                               DescriptorProto::kNameFieldNumber);
+
     location.RecordLegacyLocation(
         message, DescriptorPool::ErrorCollector::NAME);
-    DO(ConsumeIdentifier(message->mutable_name(), "Expected message name."));
+    
+	DO(ConsumeIdentifier(message->mutable_name(), "Expected message name.", message->mutable_final_comment()));
   }
   DO(ParseMessageBlock(message, message_location, containing_file));
   return true;

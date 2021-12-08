@@ -561,16 +561,16 @@ Tokenizer::NextCommentStatus Tokenizer::TryConsumeCommentStart() {
 
 bool Tokenizer::Next() {
   previous_ = current_;
-
   while (!read_error_) {
     ConsumeZeroOrMore<Whitespace>();
-
     switch (TryConsumeCommentStart()) {
       case LINE_COMMENT:
-        ConsumeLineComment(NULL);
+        ConsumeLineComment(&comment_);
+        ParseComment(comment_, &comment_);
         continue;
       case BLOCK_COMMENT:
-        ConsumeBlockComment(NULL);
+        ConsumeBlockComment(&comment_);
+		ParseComment(comment_, &comment_);
         continue;
       case SLASH_NOT_COMMENT:
         return true;
@@ -895,6 +895,19 @@ bool Tokenizer::ParseInteger(const string& text, uint64 max_value,
 
   *output = result;
   return true;
+}
+
+void Tokenizer::ParseComment(const string& text, string* output)
+{
+    string data = text;
+    output->clear();
+    const char* start_data = data.c_str();
+    const char* over_data = data.c_str() + data.size();
+	while (Whitespace::InClass(*start_data))start_data++;
+    while (Whitespace::InClass(*over_data) || *over_data == '\0')over_data--;
+
+    for (; start_data <= over_data; ++start_data)
+		output->append(start_data, 1);
 }
 
 double Tokenizer::ParseFloat(const string& text) {

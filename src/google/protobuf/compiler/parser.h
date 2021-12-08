@@ -147,7 +147,6 @@ class LIBPROTOBUF_EXPORT Parser {
   inline bool LookingAt(const char* text);
   // True if the next token is of the given type.
   inline bool LookingAtType(io::Tokenizer::TokenType token_type);
-
   // If the next token exactly matches the text given, consume it and return
   // true.  Otherwise, return false without logging an error.
   bool TryConsume(const char* text);
@@ -162,7 +161,7 @@ class LIBPROTOBUF_EXPORT Parser {
   // where "text" is the expected token text.
   bool Consume(const char* text);
   // Consume a token of type IDENTIFIER and store its text in "output".
-  bool ConsumeIdentifier(string* output, const char* error);
+  bool ConsumeIdentifier(string* output, const char* error,string* final_comment =NULL);
   // Consume an integer and store its value in "output".
   bool ConsumeInteger(int* output, const char* error);
   // Consume a signed integer and store its value in "output".
